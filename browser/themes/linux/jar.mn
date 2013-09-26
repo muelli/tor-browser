@@ -231,6 +231,7 @@ browser.jar:
   skin/classic/browser/syncQuota.css
   skin/classic/browser/syncProgress.css
 #endif
+  skin/classic/browser/canvas-popup.svg
   skin/classic/browser/webapps-16.png
   skin/classic/browser/webapps-64.png
   skin/classic/browser/notification-pluginNormal.png  (../shared/plugins/notification-pluginNormal.png)
