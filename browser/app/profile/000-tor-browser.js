@@ -140,5 +140,13 @@ pref("keyword.URL", "https://startpage.com/do/search?q=");
 pref("gfx.direct2d.disabled", true);
 pref("layers.acceleration.disabled", true);
 
+// Security enhancements
+// https://trac.torproject.org/projects/tor/ticket/9387#comment:17
+pref("javascript.options.ion.content", false);
+pref("javascript.options.baselinejit.content", false);
+pref("javascript.options.asmjs", false);
+pref("javascript.options.typeinference", false);
+
+
 // Version placeholder
 pref("torbrowser.version", "UNKNOWN");
