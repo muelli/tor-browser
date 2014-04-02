@@ -143,9 +143,9 @@ pref("layers.acceleration.disabled", true);
 // Security enhancements
 // https://trac.torproject.org/projects/tor/ticket/9387#comment:17
 pref("javascript.options.ion.content", false);
-pref("javascripjavascript.options.baselinejit.content", false);
-pref("javascripjavascript.options.asmjs", false);
-pref("javascripjavascript.options.typeinference", false);
+pref("javascript.options.baselinejit.content", false);
+pref("javascript.options.asmjs", false);
+pref("javascript.options.typeinference", false);
 
 
 // Version placeholder
