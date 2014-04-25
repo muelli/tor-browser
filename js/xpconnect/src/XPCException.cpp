@@ -298,7 +298,7 @@ nsXPCException::Initialize(const char *aMessage, nsresult aResult, const char *a
         nsAutoCString resourceFilename;
         mozilla::Omnijar::ConvertToResourceFilename(nsCString(rawFilename), resourceFilename);
         mFilename = (char *) nsMemory::Clone(resourceFilename.get(), resourceFilename.Length()+1);
-        nsMemory::Free(rawFileName); // allocated by GetFilename
+        nsMemory::Free(rawFilename); // allocated by GetFilename
         if (NS_FAILED(rc = aLocation->GetLineNumber(&mLineNumber)))
             return rc;
     } else {
