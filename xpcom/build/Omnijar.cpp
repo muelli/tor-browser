@@ -167,9 +167,10 @@ Omnijar::GetURIString(Type aType, nsACString &result)
 bool
 Omnijar::RebaseFilename(const nsCString& filename, const nsCString& oldBase, const nsCString& newBase, nsACString &result) {
     PRInt32 pos = filename.Find(oldBase);
-    if (pos > -1) {
+    PRInt32 pathLen = filename.Length() - pos - oldBase.Length();
+    if (pos > -1 && pathLen > -1 && pathLen <= filename.Length()) {
         nsAutoCString path;
-        filename.Right(path, filename.Length() - pos - oldBase.Length());
+        filename.Right(path, pathLen);
         result = newBase + path;
         return true;
     }
