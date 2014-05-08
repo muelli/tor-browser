@@ -49,6 +49,7 @@ pref("browser.syncPromoViewsLeftMap", "{\"addons\":0, \"passwords\":0, \"bookmar
 pref("services.sync.engine.prefs", false); // Never sync prefs, addons, or tabs with other browsers
 pref("services.sync.engine.addons", false);
 pref("services.sync.engine.tabs", false);
+pref("extensions.getAddons.cache.enabled", false); // https://blog.mozilla.org/addons/how-to-opt-out-of-add-on-metadata-updates/
 
 // Fingerprinting
 pref("webgl.min_capability_mode", true);
