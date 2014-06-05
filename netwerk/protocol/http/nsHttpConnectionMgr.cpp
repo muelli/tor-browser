@@ -3198,11 +3198,13 @@ nsConnectionEntry::nsConnectionEntry(nsHttpConnectionInfo *ci)
     , mPreferIPv6(false)
 {
     NS_ADDREF(mConnInfo);
+
+    // Randomize the pipeline depth (3..12)
+    mGreenDepth = gHttpHandler->GetMaxOptimisticPipelinedRequests()
+                  + rand() % (gHttpHandler->GetMaxPipelinedRequests()
+                              - gHttpHandler->GetMaxOptimisticPipelinedRequests());
+
     if (gHttpHandler->GetPipelineAggressive()) {
-        // Randomize the pipeline depth (3..12)
-        mGreenDepth = gHttpHandler->GetMaxOptimisticPipelinedRequests()
-                      + rand() % (gHttpHandler->GetMaxPipelinedRequests()
-                                  - gHttpHandler->GetMaxOptimisticPipelinedRequests());
         mPipelineState = PS_GREEN;
     }
 
