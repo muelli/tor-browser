@@ -6034,6 +6034,12 @@ var CanvasPermissionPromptHelper = {
 
   init:
   function CanvasPermissionPromptHelper_init() {
+    if (document.styleSheets && (document.styleSheets.length > 0)) try {
+      let ruleText = "panel[popupid=canvas-permissions-prompt] description { white-space: pre-wrap; }";
+      let sheet = document.styleSheets[0];
+      sheet.insertRule(ruleText, sheet.cssRules.length);
+    } catch (e) {};
+
     Services.obs.addObserver(this, this._permissionsPrompt, false);
   },
 
@@ -6077,10 +6083,10 @@ var CanvasPermissionPromptHelper = {
     var message = getLocalizedString("canvas.siteprompt", [ uri.asciiHost ]);
 
     var mainAction = {
-      label: getLocalizedString("canvas.allow"),
-      accessKey: getLocalizedString("canvas.allowAccessKey"),
+      label: getLocalizedString("canvas.notNow"),
+      accessKey: getLocalizedString("canvas.notNowAccessKey"),
       callback: function() {
-          setCanvasPermission(uri, Ci.nsIPermissionManager.ALLOW_ACTION);
+        return null;
       }
     };
 
@@ -6090,6 +6096,13 @@ var CanvasPermissionPromptHelper = {
         accessKey: getLocalizedString("canvas.neverAccessKey"),
         callback: function() {
           setCanvasPermission(uri, Ci.nsIPermissionManager.DENY_ACTION);
+        }
+      },
+      {
+        label: getLocalizedString("canvas.allow"),
+        accessKey: getLocalizedString("canvas.allowAccessKey"),
+        callback: function() {
+            setCanvasPermission(uri, Ci.nsIPermissionManager.ALLOW_ACTION);
         }
       }
     ];
