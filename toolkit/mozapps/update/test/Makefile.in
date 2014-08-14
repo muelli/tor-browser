@@ -56,6 +56,12 @@ LIBS += \
 ifeq ($(OS_ARCH),WINNT)
 USE_STATIC_LIBS = 1
 DEFINES += -DUNICODE -D_UNICODE
+OS_LIBS += $(call EXPAND_LIBNAME,wintrust shlwapi)
+ifdef GNU_CC
+# MinGW requires -municode to define the wWinMain() entry point.
+# With ESR 31, this Tor Project change will need to be moved to moz.build.
+WIN32_EXE_LDFLAGS += -municode
+endif
 endif
 endif # Not Android
 
