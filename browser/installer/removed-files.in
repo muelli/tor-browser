@@ -1434,7 +1434,9 @@ xpicleanup@BIN_SUFFIX@
   #endif
   #if MOZ_MSVC_REDIST != 1600
     msvcp100.dll
-    msvcr100.dll
+    #ifndef TOR_BROWSER_UPDATE
+      msvcr100.dll
+    #endif
   #endif
   #if MOZ_MSVC_REDIST != 1700
     msvcp110.dll

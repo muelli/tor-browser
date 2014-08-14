@@ -20,7 +20,7 @@
  *  updatev2.manifest
  *  -----------------
  *  method   = "add" | "add-if" | "patch" | "patch-if" | "remove" |
- *             "rmdir" | "rmrfdir" | type
+ *             "rmdir" | "rmrfdir" | "addsymlink" | type
  *
  *  'type' is the update type (e.g. complete or partial) and when present MUST
  *  be the first entry in the update manifest. The type is used to support
@@ -404,10 +404,12 @@ get_full_path(const NS_tchar *relpath)
  *         The line from the manifest that contains the path.
  * @param  isdir
  *         Whether the path is a directory path. Defaults to false.
+ * @param  islinktarget
+ *         Whether the path is a symbolic link target. Defaults to false.
  * @return valid filesystem path or NULL if the path checks fail.
  */
 static NS_tchar*
-get_valid_path(NS_tchar **line, bool isdir = false)
+get_valid_path(NS_tchar **line, bool isdir = false, bool islinktarget = false)
 {
   NS_tchar *path = mstrtok(kQuote, line);
   if (!path) {
@@ -442,10 +444,12 @@ get_valid_path(NS_tchar **line, bool isdir = false)
     path[NS_tstrlen(path) - 1] = NS_T('\0');
   }
 
-  // Don't allow relative paths that resolve to a parent directory.
-  if (NS_tstrstr(path, NS_T("..")) != NULL) {
-    LOG(("get_valid_path: paths must not contain '..': " LOG_S, path));
-    return NULL;
+  if (!islinktarget) {
+    // Don't allow relative paths that resolve to a parent directory.
+    if (NS_tstrstr(path, NS_T("..")) != NULL) {
+      LOG(("get_valid_path: paths must not contain '..': " LOG_S, path));
+      return NULL;
+    }
   }
 
   return path;
@@ -480,7 +484,8 @@ static void ensure_write_permissions(const NS_tchar *path)
   (void) _wchmod(path, _S_IREAD | _S_IWRITE);
 #else
   struct stat fs;
-  if (!stat(path, &fs) && !(fs.st_mode & S_IWUSR)) {
+  if (!NS_tlstat(path, &fs) && !S_ISLNK(fs.st_mode)
+      && !(fs.st_mode & S_IWUSR)) {
     (void)chmod(path, fs.st_mode | S_IWUSR);
   }
 #endif
@@ -680,7 +685,7 @@ static int ensure_copy(const NS_tchar *path, const NS_tchar *dest)
     return READ_ERROR;
   }
 
-#ifdef XP_UNIX
+#ifndef XP_WIN
   if (S_ISLNK(ss.st_mode)) {
     return ensure_copy_symlink(path, dest);
   }
@@ -779,7 +784,7 @@ static int ensure_copy_recursive(const NS_tchar *path, const NS_tchar *dest,
     return READ_ERROR;
   }
 
-#ifdef XP_UNIX
+#ifndef XP_WIN
   if (S_ISLNK(sInfo.st_mode)) {
     return ensure_copy_symlink(path, dest);
   }
@@ -838,14 +843,19 @@ static int rename_file(const NS_tchar *spath, const NS_tchar *dpath,
     return rv;
 
   struct stat spathInfo;
-  rv = NS_tstat(spath, &spathInfo);
+  rv = NS_tlstat(spath, &spathInfo);
   if (rv) {
     LOG(("rename_file: failed to read file status info: " LOG_S ", " \
          "err: %d", spath, errno));
     return READ_ERROR;
   }
 
-  if (!S_ISREG(spathInfo.st_mode)) {
+#ifdef XP_WIN
+  if (!S_ISREG(spathInfo.st_mode))
+#else
+  if (!S_ISREG(spathInfo.st_mode) && !S_ISLNK(spathInfo.st_mode))
+#endif
+  {
     if (allowDirs && !S_ISDIR(spathInfo.st_mode)) {
       LOG(("rename_file: path present, but not a file: " LOG_S ", err: %d",
            spath, errno));
@@ -855,7 +865,12 @@ static int rename_file(const NS_tchar *spath, const NS_tchar *dpath,
     }
   }
 
-  if (!NS_taccess(dpath, F_OK)) {
+#ifdef XP_WIN
+  if (!NS_taccess(dpath, F_OK))
+#else
+  if (!S_ISLNK(spathInfo.st_mode) && !NS_taccess(dpath, F_OK))
+#endif
+  {
     if (ensure_remove(dpath)) {
       LOG(("rename_file: destination file exists and could not be " \
            "removed: " LOG_S, dpath));
@@ -892,7 +907,18 @@ static int backup_restore(const NS_tchar *path)
   NS_tsnprintf(backup, sizeof(backup)/sizeof(backup[0]),
                NS_T("%s") BACKUP_EXT, path);
 
-  if (NS_taccess(backup, F_OK)) {
+  bool isLink = false;
+#ifndef XP_WIN
+  struct stat linkInfo;
+  int rv = NS_tlstat(path, &linkInfo);
+  if (!rv) {
+    LOG(("backup_restore: cannot get info for backup file: " LOG_S, backup));
+    return OK;
+  }
+  isLink = S_ISLNK(linkInfo.st_mode);
+#endif
+
+  if (!isLink && NS_taccess(backup, F_OK)) {
     LOG(("backup_restore: backup file doesn't exist: " LOG_S, backup));
     return OK;
   }
@@ -907,8 +933,18 @@ static int backup_discard(const NS_tchar *path)
   NS_tsnprintf(backup, sizeof(backup)/sizeof(backup[0]),
                NS_T("%s") BACKUP_EXT, path);
 
+  bool isLink = false;
+#ifndef XP_WIN
+  struct stat linkInfo;
+  int rv2 = NS_tlstat(backup, &linkInfo);
+  if (rv2) {
+    return OK;	// File does not exist; nothing to do.
+  }
+  isLink = S_ISLNK(linkInfo.st_mode);
+#endif
+
   // Nothing to discard
-  if (NS_taccess(backup, F_OK)) {
+  if (!isLink && NS_taccess(backup, F_OK)) {
     return OK;
   }
 
@@ -988,7 +1024,7 @@ private:
 class RemoveFile : public Action
 {
 public:
-  RemoveFile() : mFile(NULL), mSkip(0) { }
+  RemoveFile() : mFile(NULL), mSkip(0), mIsLink(0) { }
 
   int Parse(NS_tchar *line);
   int Prepare();
@@ -998,6 +1034,7 @@ public:
 private:
   const NS_tchar *mFile;
   int mSkip;
+  int mIsLink;
 };
 
 int
@@ -1015,28 +1052,39 @@ RemoveFile::Parse(NS_tchar *line)
 int
 RemoveFile::Prepare()
 {
-  // Skip the file if it already doesn't exist.
-  int rv = NS_taccess(mFile, F_OK);
-  if (rv) {
-    mSkip = 1;
-    mProgressCost = 0;
-    return OK;
+  int rv;
+#ifndef XP_WIN
+  struct stat linkInfo;
+  rv = NS_tlstat(mFile, &linkInfo);
+  mIsLink = ((0 == rv) && S_ISLNK(linkInfo.st_mode));
+#endif
+
+  if (!mIsLink) {
+    // Skip the file if it already doesn't exist.
+    rv = NS_taccess(mFile, F_OK);
+    if (rv) {
+      mSkip = 1;
+      mProgressCost = 0;
+      return OK;
+    }
   }
 
   LOG(("PREPARE REMOVEFILE " LOG_S, mFile));
 
-  // Make sure that we're actually a file...
-  struct stat fileInfo;
-  rv = NS_tstat(mFile, &fileInfo);
-  if (rv) {
-    LOG(("failed to read file status info: " LOG_S ", err: %d", mFile,
-         errno));
-    return READ_ERROR;
-  }
+  if (!mIsLink) {
+    // Make sure that we're actually a file...
+    struct stat fileInfo;
+    rv = NS_tstat(mFile, &fileInfo);
+    if (rv) {
+      LOG(("failed to read file status info: " LOG_S ", err: %d", mFile,
+           errno));
+      return READ_ERROR;
+    }
 
-  if (!S_ISREG(fileInfo.st_mode)) {
-    LOG(("path present, but not a file: " LOG_S, mFile));
-    return UNEXPECTED_FILE_OPERATION_ERROR;
+    if (!S_ISREG(fileInfo.st_mode)) {
+      LOG(("path present, but not a file: " LOG_S, mFile));
+      return UNEXPECTED_FILE_OPERATION_ERROR;
+    }
   }
 
   NS_tchar *slash = (NS_tchar *) NS_tstrrchr(mFile, NS_T('/'));
@@ -1066,7 +1114,13 @@ RemoveFile::Execute()
 
   // The file is checked for existence here and in Prepare since it might have
   // been removed by a separate instruction: bug 311099.
-  int rv = NS_taccess(mFile, F_OK);
+  int rv = 0;
+  if (mIsLink) {
+    struct stat linkInfo;
+    rv = NS_tlstat(mFile, &linkInfo);
+  } else {
+    rv = NS_taccess(mFile, F_OK);
+  }
   if (rv) {
     LOG(("file cannot be removed because it does not exist; skipping"));
     mSkip = 1;
@@ -1683,6 +1737,97 @@ PatchIfFile::Finish(int status)
   PatchFile::Finish(status);
 }
 
+#ifndef XP_WIN
+class AddSymlink : public Action
+{
+public:
+  AddSymlink() : mLinkName(NULL)
+               , mTarget(NULL)
+               , mAdded(false)
+            { }
+
+  virtual int Parse(NS_tchar *line);
+  virtual int Prepare();
+  virtual int Execute();
+  virtual void Finish(int status);
+
+private:
+  const NS_tchar *mLinkName;
+  const NS_tchar *mTarget;
+  bool mAdded;
+};
+
+int
+AddSymlink::Parse(NS_tchar *line)
+{
+  // format "<linkname>" "target"
+
+  mLinkName = get_valid_path(&line);
+  if (!mLinkName)
+    return PARSE_ERROR;
+
+  // consume whitespace between args
+  NS_tchar *q = mstrtok(kQuote, &line);
+  if (!q)
+    return PARSE_ERROR;
+
+  mTarget = get_valid_path(&line, false, true);
+  if (!mTarget)
+    return PARSE_ERROR;
+
+  return OK;
+}
+
+int
+AddSymlink::Prepare()
+{
+  LOG(("PREPARE ADDSYMLINK " LOG_S " -> " LOG_S, mLinkName, mTarget));
+
+  return OK;
+}
+
+int
+AddSymlink::Execute()
+{
+  LOG(("EXECUTE ADDSYMLINK " LOG_S " -> " LOG_S, mLinkName, mTarget));
+
+  // First make sure that we can actually get rid of any existing file or link.
+  struct stat linkInfo;
+  int rv = NS_tlstat(mLinkName, &linkInfo);
+  if ((0 == rv) && !S_ISLNK(linkInfo.st_mode)) {
+    rv = NS_taccess(mLinkName, F_OK);
+  }
+  if (rv == 0) {
+    rv = backup_create(mLinkName);
+    if (rv)
+      return rv;
+  } else {
+    rv = ensure_parent_dir(mLinkName);
+    if (rv)
+      return rv;
+  }
+
+  // Create the link.
+  rv = symlink(mTarget, mLinkName);
+  if (!rv) {
+    mAdded = true;
+  }
+
+  return rv;
+}
+
+void
+AddSymlink::Finish(int status)
+{
+  LOG(("FINISH ADDSYMLINK " LOG_S " -> " LOG_S, mLinkName, mTarget));
+  // When there is an update failure and a link has been added it is removed
+  // here since there might not be a backup to replace it.
+  if (status && mAdded)
+    NS_tremove(mLinkName);
+  backup_finish(mLinkName, status);
+}
+#endif
+
 //-----------------------------------------------------------------------------
 
 #ifdef XP_WIN
@@ -1902,19 +2047,40 @@ CopyInstallDirToDestDir()
 
   // These files should not be copied over to the updated app
 #ifdef XP_WIN
-#define SKIPLIST_COUNT 3
+  #ifdef TOR_BROWSER_UPDATE
+    #define SKIPLIST_COUNT 5
+  #else
+    #define SKIPLIST_COUNT 3
+  #endif
 #else
-#define SKIPLIST_COUNT 2
+  #ifdef TOR_BROWSER_UPDATE
+    #define SKIPLIST_COUNT 4
+  #else
+    #define SKIPLIST_COUNT 2
+  #endif
 #endif
   copy_recursive_skiplist<SKIPLIST_COUNT> skiplist;
 #ifdef XP_MACOSX
   skiplist.append(0, installDir, NS_T("Updated.app"));
   skiplist.append(1, installDir, NS_T("Contents/MacOS/updates/0"));
+#ifdef TOR_BROWSER_UPDATE
+  skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/.parentlock"));
+  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Tor/lock"));
+#endif
 #else
   skiplist.append(0, installDir, NS_T("updated"));
   skiplist.append(1, installDir, NS_T("updates/0"));
+#ifdef TOR_BROWSER_UPDATE
+#ifdef XP_UNIX
+  skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/.parentlock"));
+#else
+  skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/parent.lock"));
+#endif
+  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Tor/lock"));
+#endif
 #ifdef XP_WIN
-  skiplist.append(2, installDir, NS_T("updated.update_in_progress.lock"));
+  skiplist.append(SKIPLIST_COUNT - 1, installDir,
+                  NS_T("updated.update_in_progress.lock"));
 #endif
 #endif
 
@@ -3124,7 +3290,7 @@ int NS_main(int argc, NS_tchar **argv)
   LogFinish();
 
   if (argc > callbackIndex) {
-#if defined(XP_WIN)
+#if defined(XP_WIN) && !defined(TOR_BROWSER_UPDATE)
     if (gSucceeded) {
       // The service update will only be executed if it is already installed.
       // For first time installs of the service, the install will happen from
@@ -3747,6 +3913,11 @@ int DoUpdate()
     else if (NS_tstrcmp(token, NS_T("add-cc")) == 0) { // no longer supported
       continue;
     }
+#ifndef XP_WIN
+    else if (NS_tstrcmp(token, NS_T("addsymlink")) == 0) {
+      action = new AddSymlink();
+    }
+#endif
     else {
       LOG(("DoUpdate: unknown token: " LOG_S, token));
       return PARSE_ERROR;
