@@ -7,6 +7,11 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 const PREF_EM_HOTFIX_ID = "extensions.hotfix.id";
 
+#ifdef TOR_BROWSER_VERSION
+# Add double-quotes back on (stripped by JarMaker.py).
+#expand const TOR_BROWSER_VERSION = "__TOR_BROWSER_VERSION__";
+#endif
+
 function init(aEvent)
 {
   if (aEvent.target != document)
@@ -37,12 +42,15 @@ function init(aEvent)
   // Include the build ID and display warning if this is an "a#" (nightly or aurora) build
   let version = Services.appinfo.version;
   if (/a\d+$/.test(version)) {
-    let buildID = Services.appinfo.appBuildID;
-    let buildDate = buildID.slice(0,4) + "-" + buildID.slice(4,6) + "-" + buildID.slice(6,8);
-    document.getElementById("version").textContent += " (" + buildDate + ")";
     document.getElementById("experimental").hidden = false;
     document.getElementById("communityDesc").hidden = true;
   }
+
+#ifdef TOR_BROWSER_VERSION
+  let versionElem = document.getElementById("version");
+  if (versionElem)
+    versionElem.textContent += " (TBB " + TOR_BROWSER_VERSION + ")";
+#endif
 
 #ifdef MOZ_UPDATER
   gAppUpdater = new appUpdater();
@@ -328,9 +336,15 @@ appUpdater.prototype =
         return;
       }
 
+     // If the update has the same version as the current application,
+     // skip add-on compatibility check and start downloading now.
+#ifdef TOR_BROWSER_UPDATE
+      var pkgVersion = TOR_BROWSER_VERSION;
+#else
+      var pkgVersion = Services.appinfo.version;
+#endif
       if (!gAppUpdater.update.appVersion ||
-          Services.vc.compare(gAppUpdater.update.appVersion,
-                              Services.appinfo.version) == 0) {
+          Services.vc.compare(gAppUpdater.update.appVersion, pkgVersion) == 0) {
         gAppUpdater.startDownload();
         return;
       }
@@ -396,11 +410,16 @@ appUpdater.prototype =
         // (see bug 566787). The hotfix add-on is also ignored as it shouldn't
         // block the user from upgrading.
         try {
+#ifdef TOR_BROWSER_UPDATE
+          let compatVersion = self.update.platformVersion;
+#else
+          let compatVersion = self.update.appVersion;
+#endif
           if (aAddon.type != "plugin" && aAddon.id != hotfixID &&
               !aAddon.appDisabled && !aAddon.userDisabled &&
               aAddon.scope != AddonManager.SCOPE_APPLICATION &&
               aAddon.isCompatible &&
-              !aAddon.isCompatibleWith(self.update.appVersion,
+              !aAddon.isCompatibleWith(compatVersion,
                                        self.update.platformVersion))
             self.addons.push(aAddon);
         }
@@ -424,8 +443,13 @@ appUpdater.prototype =
    */
   checkAddonsForUpdates: function() {
     this.addons.forEach(function(aAddon) {
+#ifdef TOR_BROWSER_UPDATE
+      let compatVersion = self.update.platformVersion;
+#else
+      let compatVersion = self.update.appVersion;
+#endif
       aAddon.findUpdates(this, AddonManager.UPDATE_WHEN_NEW_APP_DETECTED,
-                         this.update.appVersion,
+                         compatVersion,
                          this.update.platformVersion);
     }, this);
   },
@@ -446,8 +470,13 @@ appUpdater.prototype =
    * See XPIProvider.jsm
    */
   onUpdateAvailable: function(aAddon, aInstall) {
+#ifdef TOR_BROWSER_UPDATE
+    let compatVersion = self.update.platformVersion;
+#else
+    let compatVersion = self.update.appVersion;
+#endif
     if (!Services.blocklist.isAddonBlocklisted(aAddon.id, aInstall.version,
-                                               this.update.appVersion,
+                                               compatVersion,
                                                this.update.platformVersion)) {
       // Compatibility or new version updates mean the same thing here.
       this.onCompatibilityUpdateAvailable(aAddon);

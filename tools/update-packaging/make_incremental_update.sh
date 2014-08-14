@@ -21,6 +21,7 @@ print_usage() {
   notice "  -h  show this help text"
   notice "  -f  clobber this file in the installation"
   notice "      Must be a path to a file to clobber in the partial update."
+  notice "  -q  be less verbose"
   notice ""
 }
 
@@ -47,6 +48,17 @@ check_for_forced_update() {
       ## "true" *giggle*
       return 0;
     fi
+
+    # If the file in the skip list ends with /*, do a prefix match.
+    # This allows TorBrowser/Data/Browser/profile.default/extensions/https-everywhere@eff.org/* to be used to force all HTTPS Everywhere files to be updated.
+    f_suffix=${f##*/}
+    if [[ $f_suffix = "*" ]]; then
+      f_prefix="${f%\/\*}";
+      if [[ $forced_file_chk == $f_prefix* ]]; then
+        ## 0 means "true"
+        return 0;
+      fi
+    fi
   done
   ## 'false'... because this is bash. Oh yay!
   return 1;
@@ -57,12 +69,25 @@ if [ $# = 0 ]; then
   exit 1
 fi
 
-requested_forced_updates='Contents/MacOS/firefox'
+# The last .xpi is NoScript.
+ext_path='TorBrowser/Data/Browser/profile.default/extensions';
+# TODO: it would be better to pass this as a command line option.
+exts='https-everywhere@eff.org/* tor-launcher@torproject.org.xpi torbutton@torproject.org.xpi uriloader@pdf.js.xpi {73a6fe31-595d-460b-a920-fcc0f8843232}.xpi'
+requested_forced_updates='Contents/MacOS/TorBrowser.app/Contents/MacOS/firefox'
+for ext in $exts; do
+  requested_forced_updates="$requested_forced_updates $ext_path/$ext"
+done
 
-while getopts "hf:" flag
+
+# TODO: it would be better to pass this as a command line option.
+directories_to_remove='TorBrowser/Data/Browser/profile.default/extensions/https-everywhere@eff.org'
+
+while getopts "hqf:" flag
 do
    case "$flag" in
       h) print_usage; exit 0
+      ;;
+      q) QUIET=1
       ;;
       f) requested_forced_updates="$requested_forced_updates $OPTARG"
       ;;
@@ -102,6 +127,7 @@ if test $? -ne 0 ; then
 fi
 
 list_files oldfiles
+list_symlinks oldsymlinks oldsymlink_targets
 list_dirs olddirs
 
 popd
@@ -118,6 +144,7 @@ fi
 
 list_dirs newdirs
 list_files newfiles
+list_symlinks newsymlinks newsymlink_targets
 
 popd
 
@@ -139,7 +166,7 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
 
   # removed-files is excluded by make_incremental_updates.py so it is excluded
   # here for consistency.
-  if [ `basename $f` = "removed-files" ]; then
+  if [ "`basename "$f"`" = "removed-files" ]; then
     continue 1
   fi
 
@@ -188,6 +215,23 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
   fi
 done
 
+# Remove and re-add symlinks
+notice ""
+notice "Adding symlink remove/add instructions to file 'update.manifest'"
+num_oldsymlinks=${#oldsymlinks[*]}
+for ((i=0; $i<$num_oldsymlinks; i=$i+1)); do
+  link="${oldsymlinks[$i]}"
+  verbose_notice "        remove: $link"
+  echo "remove \"$link\"" >> $updatemanifestv1
+done
+
+num_newsymlinks=${#newsymlinks[*]}
+for ((i=0; $i<$num_newsymlinks; i=$i+1)); do
+  link="${newsymlinks[$i]}"
+  target="${newsymlink_targets[$i]}"
+  make_addsymlink_instruction "$link" "$target" >> $updatemanifestv1
+done
+
 # Newly added files
 notice ""
 notice "Adding file add instructions to file 'update.manifest'"
@@ -198,7 +242,7 @@ for ((i=0; $i<$num_newfiles; i=$i+1)); do
 
   # removed-files is excluded by make_incremental_updates.py so it is excluded
   # here for consistency.
-  if [ `basename $f` = "removed-files" ]; then
+  if [ "`basename "$f"`" = "removed-files" ]; then
     continue 1
   fi
 
@@ -234,6 +278,16 @@ notice "Adding type instruction to file 'updatev2.manifest'"
 > $updatemanifestv2
 notice "       type: partial"
 echo "type \"partial\"" >> $updatemanifestv2
+
+# If removal of any old, existing directories is desired, emit the appropriate
+# rmdfdir commands.
+for dir_to_remove in $directories_to_remove; do
+  # rmrfdir reuires a trailing slash, so add one if missing.
+  if ! [[ "$dir_to_remove" =~ /$ ]]; then
+	dir_to_remove="${dir_to_remove}/"
+  fi
+  echo "rmrfdir \"$dir_to_remove\"" >> $updatemanifestv2
+done
 
 notice ""
 notice "Concatenating file 'update.manifest' to file 'updatev2.manifest'"
