@@ -30,6 +30,12 @@
  *  -----------
  *  method   = "remove" | "rmdir"
  */
+
+// To avoid conflicts within MinGW headers, sys/stat.h must be included
+// before ../common/updatedefines.h which is included by progressui.h
+// This Tor Project change may not be needed with ESR 31.
+#include <sys/stat.h>
+
 #include "bspatch.h"
 #include "progressui.h"
 #include "archivereader.h"
@@ -41,9 +47,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef XP_WIN
+// This Tor Project change may not be needed with ESR 31.
+#include <algorithm>    // for std::max
+#endif
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <errno.h>
@@ -2301,6 +2310,10 @@ UpdateThreadFunc(void *param)
   QuitProgressUI();
 }
 
+#ifdef __MINGW32__
+// This Tor Project change may not be needed with gcc 4.9 or newer.
+extern "C"
+#endif
 int NS_main(int argc, NS_tchar **argv)
 {
 #if defined(MOZ_WIDGET_GONK)
@@ -2947,7 +2960,7 @@ int NS_main(int argc, NS_tchar **argv)
       if (!GetInstallationDir(installDir))
         return 1;
       size_t callbackPrefixLength = PathCommonPrefixW(argv[callbackIndex], installDir, NULL);
-      NS_tstrncpy(p, argv[callbackIndex] + max(callbackPrefixLength, commonPrefixLength), bufferLeft);
+      NS_tstrncpy(p, argv[callbackIndex] + std::max(callbackPrefixLength, commonPrefixLength), bufferLeft);
       targetPath = buffer;
     }
     if (!GetLongPathNameW(targetPath, callbackLongPath,
