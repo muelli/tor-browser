@@ -461,6 +461,7 @@ ThirdPartyUtil::GetFirstPartyURIInternal(nsIChannel *aChannel,
                                          nsIURI **aOutput)
 {
   nsresult rv = NS_ERROR_NULL_POINTER;
+  nsCOMPtr<nsIURI> srcURI;
 
   if (!aOutput)
     return rv;
@@ -475,6 +476,7 @@ ThirdPartyUtil::GetFirstPartyURIInternal(nsIChannel *aChannel,
   // for sure
   if (aChannel) {
     rv = GetOriginatingURI(aChannel, aOutput);
+    aChannel->GetURI(getter_AddRefs(srcURI));
     if (NS_SUCCEEDED(rv) && *aOutput) {
       // At this point, about: and chrome: URLs have been mapped to file: or
       // jar: URLs.  Try to recover the original URL.
@@ -501,6 +503,7 @@ ThirdPartyUtil::GetFirstPartyURIInternal(nsIChannel *aChannel,
     nsCOMPtr<nsIDOMWindow> top;
     nsCOMPtr<nsIDOMDocument> topDDoc;
     nsIURI *docURI = nullptr;
+    srcURI = aDoc->GetDocumentURI();
 
     if (aDoc->GetWindow()) {
       aDoc->GetWindow()->GetTop(getter_AddRefs(top));
@@ -539,14 +542,19 @@ ThirdPartyUtil::GetFirstPartyURIInternal(nsIChannel *aChannel,
                               (do_GetService(NS_CONSOLESERVICE_CONTRACTID));
     if (console) {
       nsCString spec;
+      nsCString srcSpec("unknown");
+
+      if (srcURI)
+        srcURI->GetSpec(srcSpec);
+
       if (*aOutput)
         (*aOutput)->GetSpec(spec);
       if (spec.Length() > 0) {
-        nsPrintfCString msg("getFirstPartyURI: no host in first party URI %s",
-                            spec.get()); // TODO: L10N
+        nsPrintfCString msg("getFirstPartyURI failed for %s: no host in first party URI %s",
+                            srcSpec.get(), spec.get()); // TODO: L10N
         console->LogStringMessage(NS_ConvertUTF8toUTF16(msg).get());
       } else {
-        nsPrintfCString msg("getFirstPartyURI failed: 0x%x", rv);
+        nsPrintfCString msg("getFirstPartyURI failed for %s: 0x%x", srcSpec.get(), rv);
         console->LogStringMessage(NS_ConvertUTF8toUTF16(msg).get());
       }
     }
