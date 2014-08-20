@@ -355,7 +355,7 @@ HTMLCanvasElement::ToDataURL(const nsAString& aType, const JS::Value& aParams,
 
   // Check site-specific permission and display prompt if appropriate.
   // If no permission, return all-white, opaque image data.
-  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc());
+  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc(), aCx);
   return ToDataURLImpl(aCx, aType, aParams, usePlaceholder, aDataURL);
 }
 
@@ -590,10 +590,11 @@ HTMLCanvasElement::ToBlob(nsIFileCallback* aCallback,
   }
 
   bool fallbackToPNG = false;
+  JSContext* cx = nsContentUtils::GetCurrentJSContext();
 
   // Check site-specific permission and display prompt if appropriate.
   // If no permission, return all-white, opaque image data.
-  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc());
+  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc(), cx);
   nsCOMPtr<nsIInputStream> stream;
   rv = ExtractData(type, EmptyString(), usePlaceholder,
                    getter_AddRefs(stream), fallbackToPNG);
@@ -616,7 +617,6 @@ HTMLCanvasElement::ToBlob(nsIFileCallback* aCallback,
   nsRefPtr<nsDOMMemoryFile> blob =
     new nsDOMMemoryFile(imgData, imgSize, type);
 
-  JSContext* cx = nsContentUtils::GetCurrentJSContext();
   if (cx) {
     JS_updateMallocCounter(cx, imgSize);
   }
@@ -648,7 +648,8 @@ HTMLCanvasElement::MozGetAsFile(const nsAString& aName,
 
   // Check site-speciifc permission and display prompt if appropriate.
   // If no permission, return all-white, opaque image data.
-  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc());
+  bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(OwnerDoc(),
+                         nsContentUtils::GetCurrentJSContext());
   return MozGetAsFileImpl(aName, aType, usePlaceholder, aResult);
 }
 
