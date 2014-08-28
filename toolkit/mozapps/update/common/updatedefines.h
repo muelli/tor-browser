@@ -39,6 +39,7 @@
 
 # define putenv _putenv
 # define stat _stat
+# define fstat _fstat  // This Tor Project change may not be needed with ESR 31.
 # define DELETE_DIR L"tobedeleted"
 # define CALLBACK_BACKUP_EXT L".moz-callback"
 
