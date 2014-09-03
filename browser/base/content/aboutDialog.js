@@ -49,7 +49,7 @@ function init(aEvent)
 #ifdef TOR_BROWSER_VERSION
   let versionElem = document.getElementById("version");
   if (versionElem)
-    versionElem.textContent += " (TBB " + TOR_BROWSER_VERSION + ")";
+    versionElem.textContent += " (Tor Browser " + TOR_BROWSER_VERSION + ")";
 #endif
 
 #ifdef MOZ_UPDATER
@@ -444,9 +444,9 @@ appUpdater.prototype =
   checkAddonsForUpdates: function() {
     this.addons.forEach(function(aAddon) {
 #ifdef TOR_BROWSER_UPDATE
-      let compatVersion = self.update.platformVersion;
+      let compatVersion = this.update.platformVersion;
 #else
-      let compatVersion = self.update.appVersion;
+      let compatVersion = this.update.appVersion;
 #endif
       aAddon.findUpdates(this, AddonManager.UPDATE_WHEN_NEW_APP_DETECTED,
                          compatVersion,
@@ -471,9 +471,9 @@ appUpdater.prototype =
    */
   onUpdateAvailable: function(aAddon, aInstall) {
 #ifdef TOR_BROWSER_UPDATE
-    let compatVersion = self.update.platformVersion;
+    let compatVersion = this.update.platformVersion;
 #else
-    let compatVersion = self.update.appVersion;
+    let compatVersion = this.update.appVersion;
 #endif
     if (!Services.blocklist.isAddonBlocklisted(aAddon.id, aInstall.version,
                                                compatVersion,
