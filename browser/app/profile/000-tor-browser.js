@@ -172,6 +172,9 @@ pref("security.tls.version.max", 3);
 // POODLE hotfix: Disable SSLv3
 pref("security.tls.version.min", 1);
 
+// Bug 13443: Disable DirectShow to prevent crashing on windows
+pref("media.directshow.enabled", false);
+
 #ifdef TOR_BROWSER_VERSION
 #expand pref("torbrowser.version", __TOR_BROWSER_VERSION__);
 #endif
