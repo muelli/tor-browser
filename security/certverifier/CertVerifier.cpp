@@ -197,6 +197,36 @@ SECStatus chainValidationCallback(void* state, const CERTCertList* certList,
   return SECSuccess;
 }
 
+// This always returns secfailure but its objective is to replate
+// the PR_Error
+static void
+tryWorsenPRErrorInCallback(CERTCertificate* cert,
+                           ChainValidationCallbackState* callbackState) {
+  ScopedCERTCertificate certCopy(CERT_DupCertificate(cert));
+  if (!certCopy) {
+    return;
+  }
+  ScopedCERTCertList certList(CERT_NewCertList());
+  if (!certList) {
+    return;
+  }
+  SECStatus srv = CERT_AddCertToListTail(certList.get(), certCopy.get());
+  if (srv != SECSuccess) {
+    return;
+  }
+  certCopy.release(); // now owned by certList
+  PRBool chainOK = false;
+  srv = chainValidationCallback(&callbackState, certList.get(), &chainOK);
+  if (srv != SECSuccess) {
+    return;
+  }
+  if (!chainOK) {
+    PR_SetError(SEC_ERROR_APPLICATION_CALLBACK_ERROR, 0); // same as libpkix
+    return ;
+  }
+  return; // no change in PR_error
+}
+
 static SECStatus
 ClassicVerifyCert(CERTCertificate* cert,
                   const SECCertificateUsage usage,
@@ -276,6 +306,12 @@ ClassicVerifyCert(CERTCertificate* cert,
         return SECFailure;
       }
     }
+
+    // If there is an error we may need to worsen to error to be a pinning failure
+    if (rv != SECSuccess && usage == certificateUsageSSLServer) {
+      tryWorsenPRErrorInCallback(cert, callbackState);
+    }
+
     if (rv == SECSuccess && validationChain) {
       *validationChain = certChain.release();
     }
@@ -543,6 +579,12 @@ CertVerifier::MozillaPKIXVerifyCert(
     default:
       PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
       return SECFailure;
+  }
+
+  // If there is an error we may need to worsen to error to be a pinning failure
+  if (rv != SECSuccess && usage == certificateUsageSSLServer &&
+      PR_GetError() != SEC_ERROR_APPLICATION_CALLBACK_ERROR) {
+    tryWorsenPRErrorInCallback(cert, callbackState);
   }
 
   if (validationChain && rv == SECSuccess) {
@@ -876,6 +918,12 @@ CertVerifier::VerifyCert(CERTCertificate* cert,
   rv = CERT_PKIXVerifyCert(cert, usage, cvin, cvout, pinArg);
 
 pkix_done:
+  // If there is an error we may need to worsen to error to be a pinning failure
+  if (rv != SECSuccess && usage == certificateUsageSSLServer &&
+      PR_GetError() != SEC_ERROR_APPLICATION_CALLBACK_ERROR) {
+    tryWorsenPRErrorInCallback(cert, &callbackState);
+  }
+
   if (validationChain) {
     PR_LOG(gCertVerifierLog, PR_LOG_DEBUG, ("VerifyCert: validation chain requested\n"));
     ScopedCERTCertificate trustAnchor(cvout[validationTrustAnchorLocation].value.pointer.cert);
