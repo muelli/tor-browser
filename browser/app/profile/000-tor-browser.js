@@ -93,6 +93,7 @@ pref("security.enable_tls_session_tickets", false);
 pref("network.http.spdy.enabled", false); // Stores state and may have keepalive issues (both fixable)
 pref("network.http.spdy.enabled.v2", false); // Seems redundant, but just in case
 pref("network.http.spdy.enabled.v3", false); // Seems redundant, but just in case
+pref("privacy.thirdparty.isolate", 2); // Always enforce third party isolation
 
 // Proxy and proxy security
 pref("network.proxy.socks", "127.0.0.1");
