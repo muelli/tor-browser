@@ -4,6 +4,5 @@ twitter
 wikipedia
 startpage
 yahoo
-bing
 google
 duckduckgo
