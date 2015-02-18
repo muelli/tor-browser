@@ -153,11 +153,11 @@ pref("browser.uiCustomization.state", "{\"placements\":{\"PanelUI-contents\":[\"
 pref("browser.search.defaultenginename", "Search");
 
 // Search engine order (order displayed in the search bar dropdown)
-// Somewhat surprisingly we get Disconnect - YouTube - Twitter as the order
-// only if we set them as below.
-pref("browser.search.order.extra.1", "YouTube");
-pref("browser.search.order.extra.2", "Twitter");
-pref("browser.search.order.extra.3", "Search");
+// Somewhat surprisingly we get some random behavior if we specify more than
+// two search engines as below. See
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1126722 for details.
+pref("browser.search.order.extra.1", "Search");
+pref("browser.search.order.extra.2", "YouTube");
 
 // Hacks/workarounds: Direct2D seems to crash w/ lots of video cards w/ MinGW?
 // Nvida cards also experience crashes without the second pref set to disabled
