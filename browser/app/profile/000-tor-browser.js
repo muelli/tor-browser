@@ -117,7 +117,10 @@ pref("plugin.state.flash", 1);
 pref("plugins.hide_infobar_for_missing_plugin", true);
 pref("plugins.hideMissingPluginsNotification", true);
 pref("media.peerconnection.enabled", false); // Disable WebRTC interfaces
-pref("svg.in-content.enabled", true); // May be disabled via Torbutton's security slider.
+
+// Security slider
+pref("svg.in-content.enabled", true);
+pref("mathml.disabled", false);
 
 // Network and performance
 pref("network.http.pipelining", true);
