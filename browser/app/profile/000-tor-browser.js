@@ -112,6 +112,7 @@ pref("network.protocol-handler.warn-external.mailto", true);
 pref("network.protocol-handler.warn-external.news", true);
 pref("network.protocol-handler.warn-external.nntp", true);
 pref("network.protocol-handler.warn-external.snews", true);
+pref("plugin.disable", true); // Disable to search plugins on first start
 pref("plugins.click_to_play", true);
 pref("plugin.state.flash", 1);
 pref("plugins.hide_infobar_for_missing_plugin", true);
