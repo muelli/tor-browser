@@ -52,7 +52,6 @@ var PluginProvider = {
   plugins: null,
 
   startup: function PL_startup() {
-    Services.obs.addObserver(this, "plugins-policy-changed", false);
     Services.obs.addObserver(this, LIST_UPDATED_TOPIC, false);
     Services.obs.addObserver(this, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED, false);
   },
@@ -65,7 +64,6 @@ var PluginProvider = {
     this.plugins = null;
     Services.obs.removeObserver(this, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED);
     Services.obs.removeObserver(this, LIST_UPDATED_TOPIC);
-    Services.obs.removeObserver(this, "plugins-policy-changed");
   },
 
   observe: function(aSubject, aTopic, aData) {
@@ -90,15 +88,6 @@ var PluginProvider = {
     case LIST_UPDATED_TOPIC:
       if (this.plugins)
         this.updatePluginList();
-      break;
-    case "plugins-policy-changed":
-      var plugin_policy = aData
-      if (!this.plugins)
-        this.plugins =[];
-      this.updatePluginList();
-      Services.obs.notifyObservers(null,
-                                   "plugin-provider-after-changed-policy",
-                                   plugin_policy);
       break;
     }
   },
