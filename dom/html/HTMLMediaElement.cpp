@@ -1866,7 +1866,7 @@ NS_IMETHODIMP HTMLMediaElement::GetSeeking(bool* aSeeking)
 }
 
 double
-HTMLMediaElement::CurrentTime() const
+HTMLMediaElement::CurrentTimeImpl() const
 {
   if (MediaStream* stream = GetSrcMediaStream()) {
     if (mSrcStreamPausedCurrentTime >= 0) {
@@ -1880,6 +1880,12 @@ HTMLMediaElement::CurrentTime() const
   }
 
   return mDefaultPlaybackStartPosition;
+}
+
+double
+HTMLMediaElement::CurrentTime() const
+{
+  return floor(10 * CurrentTimeImpl()) / 10;
 }
 
 NS_IMETHODIMP HTMLMediaElement::GetCurrentTime(double* aCurrentTime)
