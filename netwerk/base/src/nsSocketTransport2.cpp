@@ -1080,8 +1080,6 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
 
         const char *host       = mHost.get();
         int32_t     port       = (int32_t) mPort;
-        const char *proxyHost  = mProxyHost.IsEmpty() ? nullptr : mProxyHost.get();
-        int32_t     proxyPort  = (int32_t) mProxyPort;
         uint32_t    proxyFlags = 0;
         nsCOMPtr<nsIProxyInfo> proxyInfo = mProxyInfo;
 
@@ -1154,8 +1152,6 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                 // since socks is transparent, any layers above
                 // it do not have to worry about proxy stuff
                 proxyInfo = nullptr;
-                proxyHost = nullptr;
-                proxyPort = -1;
                 proxyTransparent = true;
             }
         }
