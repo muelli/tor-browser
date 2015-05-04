@@ -65,10 +65,10 @@ HttpBaseChannel::HttpBaseChannel()
   , mAllRedirectsSameOrigin(true)
   , mSuspendCount(0)
   , mProxyResolveFlags(0)
+  , mProxyURI(nullptr)
   , mContentDispositionHint(UINT32_MAX)
   , mHttpHandler(gHttpHandler)
   , mRedirectCount(0)
-  , mProxyURI(nullptr)
 {
   LOG(("Creating HttpBaseChannel @%x\n", this));
 
