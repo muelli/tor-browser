@@ -601,7 +601,7 @@ ThirdPartyUtil::GetFirstPartyHostForIsolation(nsIURI *aFirstPartyURI,
     return NS_ERROR_INVALID_ARG;
 
   if (!SchemeIsWhiteListed(aFirstPartyURI)) {
-    nsresult rv = aFirstPartyURI->GetHost(aHost);
+    nsresult rv = GetBaseDomain(aFirstPartyURI, aHost);
     return (aHost.Length() > 0) ? NS_OK : rv;
   }
 
