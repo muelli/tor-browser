@@ -2080,13 +2080,13 @@ CopyInstallDirToDestDir()
   // These files should not be copied over to the updated app
 #ifdef XP_WIN
   #ifdef TOR_BROWSER_UPDATE
-    #define SKIPLIST_COUNT 5
+    #define SKIPLIST_COUNT 6
   #else
     #define SKIPLIST_COUNT 3
   #endif
 #else
   #ifdef TOR_BROWSER_UPDATE
-    #define SKIPLIST_COUNT 4
+    #define SKIPLIST_COUNT 5
   #else
     #define SKIPLIST_COUNT 2
   #endif
@@ -2097,7 +2097,8 @@ CopyInstallDirToDestDir()
   skiplist.append(1, installDir, NS_T("Contents/MacOS/updates/0"));
 #ifdef TOR_BROWSER_UPDATE
   skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/.parentlock"));
-  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Tor/lock"));
+  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Browser/profile.meek-http-helper/.parentlock"));
+  skiplist.append(4, installDir, NS_T("TorBrowser/Data/Tor/lock"));
 #endif
 #else
   skiplist.append(0, installDir, NS_T("updated"));
@@ -2105,10 +2106,12 @@ CopyInstallDirToDestDir()
 #ifdef TOR_BROWSER_UPDATE
 #ifdef XP_UNIX
   skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/.parentlock"));
+  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Browser/profile.meek-http-helper/.parentlock"));
 #else
   skiplist.append(2, installDir, NS_T("TorBrowser/Data/Browser/profile.default/parent.lock"));
+  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Browser/profile.meek-http-helper/parent.lock"));
 #endif
-  skiplist.append(3, installDir, NS_T("TorBrowser/Data/Tor/lock"));
+  skiplist.append(4, installDir, NS_T("TorBrowser/Data/Tor/lock"));
 #endif
 #ifdef XP_WIN
   skiplist.append(SKIPLIST_COUNT - 1, installDir,
