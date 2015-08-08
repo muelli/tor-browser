@@ -248,7 +248,6 @@ bool nsContentUtils::sIsResourceTimingEnabled = false;
 bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
 bool nsContentUtils::sIsExperimentalAutocompleteEnabled = false;
 bool nsContentUtils::sEncodeDecodeURLHash = false;
-bool nsContentUtils::sPrivacyResistFingerprinting = false;
 
 uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
 
@@ -526,9 +525,6 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sEncodeDecodeURLHash,
                                "dom.url.encode_decode_hash", false);
-
-  Preferences::AddBoolVarCache(&sPrivacyResistFingerprinting,
-                               "privacy.resistFingerprinting", false);
 
   Preferences::AddUintVarCache(&sHandlingInputTimeout,
                                "dom.event.handling-user-input-time-limit",
