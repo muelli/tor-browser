@@ -1146,10 +1146,6 @@ gfxDWriteFontList::GetFontsFromCollection(IDWriteFontCollection* aCollection)
 
         nsDependentString familyName(enName.Elements());
 
-        if (!gfxFontUtils::IsFontFamilyNameAllowed(familyName)) {
-            continue;
-        }
-
         fam = new gfxDWriteFontFamily(familyName, family);
         if (!fam) {
             continue;
