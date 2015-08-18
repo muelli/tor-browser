@@ -276,9 +276,6 @@ pref("font.name.sans-serif.ar", "Arial");
 pref("font.system.whitelist", "Arial, Batang, Courier New, Euphemia, Gautami, Georgia, Gulim, GulimChe, Iskoola Pota, Kalinga, Kartika, Latha, Lucida Console, MS Gothic, MS Mincho, MS PGothic, MS PMincho, MV Boli, Mangal, Microsoft Himalaya, Microsoft YaHei, MingLiU, Noto Sans Buginese, Noto Sans Khmer, Noto Sans Lao, Noto Sans Myanmar, Noto Sans Yi, Nyala, PMingLiU, Plantagenet Cherokee, Raavi, Segoe UI, Shruti, SimSun, Sylfaen, Tahoma, Times New Roman, Tunga, Verdana, Vrinda");
 #endif
 
-#ifdef XP_LINUX
-pref("font.system.whitelist", "Arimo, Arimo Bold, Arimo Italic, Arimo Bold Italic, Cousine, Tinos, Tinos Bold, Tinos Italic, Tinos Bold Italic, Noto Naskh Arabic, Noto Sans Armenian, Noto Sans Bengali, Noto Sans Buginese, Noto Sans CJK SC Regular, Noto Sans Canadian Aboriginal, Noto Sans Cherokee, Noto Sans Devanagari, Noto Sans Ethiopic, Noto Sans Georgian, Noto Sans Gujarati, Noto Sans Gurmukhi, Noto Sans Hebrew, Noto Sans Kannada, Noto Sans Khmer, Noto Sans Lao, Noto Sans Malayalam, Noto Sans Mongolian, Noto Sans Myanmar, Noto Sans Oriya, Noto Sans Sinhala, Noto Sans Tamil, Noto Sans Telugu, Noto Sans Thaana, Noto Sans Thai, Noto Sans Tibetan, Noto Sans Yi, Noto Serif Armenian, Noto Serif Khmer, Noto Serif Lao, Noto Serif Thai");
-
 pref("font.default.lo", "Noto Sans Lao");
 pref("font.default.my", "Noto Sans Myanmar");
 pref("font.default.x-western", "sans-serif");
