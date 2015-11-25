@@ -222,6 +222,9 @@ var gInitialPages = [
   "about:welcomeback",
   "about:sessionrestore"
 ];
+if (AppConstants.TOR_BROWSER_UPDATE) {
+  gInitialPages.push("about:tbupdate");
+}
 
 function* browserWindows() {
   let windows = Services.wm.getEnumerator("navigator:browser");
@@ -2412,7 +2415,8 @@ function URLBarSetURI(aURI) {
     let defaultRemoteURL = gAboutNewTabService.remoteEnabled &&
                            uri.spec === gAboutNewTabService.newTabURL;
     if ((gInitialPages.includes(uri.spec) || defaultRemoteURL) &&
-        checkEmptyPageOrigin(gBrowser.selectedBrowser, uri)) {
+        checkEmptyPageOrigin(gBrowser.selectedBrowser, uri))
+    {
       value = "";
     } else {
       // We should deal with losslessDecodeURI throwing for exotic URIs
@@ -7438,7 +7442,12 @@ var gIdentityHandler = {
       this._uriHasHost = false;
     }
 
-    let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
+    let whitelist;
+    if (AppConstants.TOR_BROWSER_UPDATE) {
+      whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback|tor|tbupdate)(?:[?#]|$)/i;
+    } else {
+      whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback|tor)(?:[?#]|$)/i;
+    }
     this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.path);
 
     // Create a channel for the sole purpose of getting the resolved URI
