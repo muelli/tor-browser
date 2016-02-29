@@ -1025,7 +1025,7 @@ function getUpdatesDirInApplyToDir() {
 #endif
   dir.append(UPDATED_DIR);
 #ifdef XP_MACOSX
-#ifdef TOR_BROWSER_UPDATE
+#if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
   dir.append("TorBrowser");
   dir.append("UpdateInfo");
 #else
@@ -4051,6 +4051,7 @@ Downloader.prototype = {
                      createInstance(Ci.nsIFileInputStream);
     fileStream.init(destination, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
 
+    let digest;
     try {
       var hash = Cc["@mozilla.org/security/hash;1"].
                  createInstance(Ci.nsICryptoHash);
