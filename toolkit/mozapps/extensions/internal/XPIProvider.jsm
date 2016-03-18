@@ -99,6 +99,7 @@ const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/exte
 const STRING_TYPE_NAME                = "type.%ID%.name";
 
 const DIR_EXTENSIONS                  = "extensions";
+const DIR_PREFERENCES                 = "preferences";
 const DIR_STAGE                       = "staged";
 const DIR_XPI_STAGE                   = "staged-xpis";
 const DIR_TRASH                       = "trash";
@@ -2820,6 +2821,58 @@ this.XPIProvider = {
   },
 
   /**
+   * Installs any preference files located in the preferences directory of the
+   * application's distribution specific directory into the profile.
+   *
+   * @return true if any preference files were installed
+   */
+  installDistributionPreferences: function XPI_installDistributionPreferences() {
+    let distroDir;
+    try {
+      distroDir = FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_PREFERENCES]);
+    }
+    catch (e) {
+      return false;
+    }
+
+    if (!distroDir.exists() || !distroDir.isDirectory())
+      return false;
+
+    let changed = false;
+    let prefOverrideDir = Services.dirsvc.get("PrefDOverride", Ci.nsIFile);
+
+    let entries = distroDir.directoryEntries
+                           .QueryInterface(Ci.nsIDirectoryEnumerator);
+    let entry;
+    while ((entry = entries.nextFile)) {
+      let fileName = entry.leafName;
+      if (!entry.isFile() ||
+          fileName.substring(fileName.length - 3).toLowerCase() != ".js") {
+        logger.debug("Ignoring distribution preference that isn't a JS file: "
+                     + entry.path);
+        continue;
+      }
+
+      try {
+        if (!prefOverrideDir.exists()) {
+          prefOverrideDir.create(Ci.nsIFile.DIRECTORY_TYPE,
+                                 FileUtils.PERMS_DIRECTORY);
+        }
+
+        entry.copyTo(prefOverrideDir, null);
+        changed = true;
+      } catch (e) {
+        logger.debug("Unable to copy " + entry.path + " to " +
+                     prefOverrideDir.path);
+      }
+    }
+
+    entries.close();
+
+    return changed;
+  },
+
+  /**
    * Compares the add-ons that are currently installed to those that were
    * known to be installed when the application last ran and applies any
    * changes found to the database. Also sends "startupcache-invalidate" signal to
@@ -3548,6 +3601,12 @@ this.XPIProvider = {
       updated = this.installDistributionAddons(manifests);
       if (updated) {
         updateReasons.push("installDistributionAddons");
+      }
+
+      // Also copy distribution preferences to the user's profile.
+      updated = this.installDistributionPreferences();
+      if (updated) {
+        updateReasons.push("installDistributionPreferences");
       }
     }
 
