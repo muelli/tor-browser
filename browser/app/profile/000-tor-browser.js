@@ -268,7 +268,7 @@ pref("browser.uiCustomization.state", "{\"placements\":{\"PanelUI-contents\":[\"
 
 // Putting the search engine prefs into this file to fix #11236.
 // Default search engine
-pref("browser.search.defaultenginename", "Disconnect");
+pref("browser.search.defaultenginename", "DuckDuckGo");
 // Make sure we use the same search engine regardless of locale
 pref("browser.search.geoSpecificDefaults", false);
 
@@ -276,7 +276,7 @@ pref("browser.search.geoSpecificDefaults", false);
 // Somewhat surprisingly we get some random behavior if we specify more than
 // two search engines as below. See
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1126722 for details.
-pref("browser.search.order.extra.1", "Disconnect");
+pref("browser.search.order.extra.1", "DuckDuckGo");
 pref("browser.search.order.extra.2", "YouTube");
 
 // Hacks/workarounds: Direct2D seems to crash w/ lots of video cards w/ MinGW?
