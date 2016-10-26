@@ -56,7 +56,6 @@ ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
       }
       [view setNeedsDisplay:YES];
       mViews.AppendElement(view);
-      iter.Next();
     } else {
       // Our new region is made of fewer rects than the old region, so we can
       // remove this view. We only have a weak reference to it, so removing it
