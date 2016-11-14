@@ -4510,6 +4510,8 @@ XREMain::XRE_mainRun()
 
   OverrideDefaultLocaleIfNeeded();
 
+  UseUTCTimeZoneIfNeeded();
+
 #ifdef MOZ_CRASHREPORTER
   nsCString userAgentLocale;
   // Try a localized string first. This pref is always a localized string in
@@ -5263,5 +5265,12 @@ void
 XRE_EnableSameExecutableForContentProc() {
   if (!PR_GetEnv("MOZ_SEPARATE_CHILD_PROCESS")) {
     mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
+  }
+}
+
+void
+UseUTCTimeZoneIfNeeded() {
+  if (mozilla::Preferences::GetBool("privacy.use_utc_timezone", false)) {
+    SaveToEnv("TZ=UTC");
   }
 }
