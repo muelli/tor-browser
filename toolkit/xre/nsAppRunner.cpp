@@ -214,7 +214,7 @@
 #if defined(XP_LINUX) && !defined(ANDROID)
 #include "mozilla/SandboxInfo.h"
 #elif defined(XP_WIN)
-#include "SandboxBroker.h"
+#include "sandboxBroker.h"
 #endif
 #endif
 
