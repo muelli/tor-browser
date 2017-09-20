@@ -3281,7 +3281,12 @@ bool
 TabParent::RecvShowCanvasPermissionPrompt(const nsCString& firstPartyURI)
 {
   nsCOMPtr<nsIBrowser> browser = do_QueryInterface(mFrameElement);
-  NS_ENSURE_TRUE(browser, false);
+  if (!browser) {
+    // If the tab is being closed, the browser may not be available.
+    // In this case we can ignore the request.
+    return true;
+  }
+
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   NS_ENSURE_TRUE(os, false);
   nsresult rv = os->NotifyObservers(browser, "canvas-permissions-prompt",
