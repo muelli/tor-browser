@@ -150,7 +150,7 @@ struct Opcode {
   // flag.
   unsigned int flag_dest_;
   unsigned int flag_source_;
-  unsigned flag_aux_;
+  unsigned int flag_aux_;
 
   // We indicate the mnemonic for debugging purposes
   const char* mnemonic_;
