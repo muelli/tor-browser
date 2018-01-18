@@ -80,7 +80,7 @@ VP9Benchmark::IsVP9DecodeFast()
 
   uint32_t decodeFps = Preferences::GetUint(sBenchmarkFpsPref);
   uint32_t threshold =
-    Preferences::GetUint("media.benchmark.vp9.threshold", 0);
+    Preferences::GetUint("media.benchmark.vp9.threshold", 0U);
 
   return decodeFps >= threshold;
 #endif
