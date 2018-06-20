@@ -94,7 +94,6 @@ EXPORTS.mozilla += [
 UNIFIED_SOURCES += [
     'Base64.cpp',
     'crc32c.c',
-    'FilePreferences.cpp',
     'nsAnonymousTemporaryFile.cpp',
     'nsAppFileLocationProvider.cpp',
     'nsBinaryStream.cpp',
@@ -121,6 +120,10 @@ UNIFIED_SOURCES += [
     'SnappyUncompressInputStream.cpp',
     'SpecialSystemDirectory.cpp',
     'TorFileUtils.cpp',
+]
+
+SOURCES += [
+    'FilePreferences.cpp',
 ]
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
