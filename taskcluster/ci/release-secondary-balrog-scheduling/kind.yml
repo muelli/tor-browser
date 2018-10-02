@@ -1,0 +1,55 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+loader: taskgraph.loader.transform:loader
+
+transforms:
+   - taskgraph.transforms.release_deps:transforms
+   - taskgraph.transforms.scriptworker:add_balrog_scopes
+   - taskgraph.transforms.task:transforms
+
+kind-dependencies:
+   - post-balrog-dummy
+   - post-beetmover-dummy
+   - release-secondary-balrog-submit-toplevel
+
+job-defaults:
+   run-on-projects: []
+   shipping-phase: ship
+   worker:
+      implementation: balrog
+      balrog-action: schedule
+
+jobs:
+   firefox-secondary-rc:
+      description: Schedule Beta Firefox publishing in balrog
+      name: release-firefox_schedule_publishing_in_balrog
+      shipping-product: firefox
+      worker:
+         product: firefox
+         release-eta: ''
+         channel-names:
+            by-project:
+               birch: ["beta", "beta-localtest", "beta-cdntest"]
+               jamun: ["esr", "esr-localtest", "esr-cdntest"]
+               mozilla-release: ["beta", "beta-localtest", "beta-cdntest"]
+               mozilla-esr60: ["esr", "esr-localtest", "esr-cdntest"]
+               default: []
+         publish-rules:
+            by-project:
+               birch: [32]
+               mozilla-release: [32]
+               default: []
+         rules-to-update:
+            by-project:
+               birch: ["firefox-beta-cdntest", "firefox-beta-localtest"]
+               jamun: ["firefox-esr60-cdntest", "firefox-esr60-localtest"]
+               mozilla-release: ["firefox-beta-cdntest", "firefox-beta-localtest"]
+               mozilla-esr60: ["firefox-esr60-cdntest", "firefox-esr60-localtest"]
+               default: []
+      treeherder:
+         platform: linux64/opt
+         symbol: Rel(BSFxRC)
+         tier: 1
+         kind: build
